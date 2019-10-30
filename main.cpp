@@ -3,40 +3,51 @@
 #include <algorithm>
 #include <random>
 #include <chrono>
+
 using std::cout;
 using std::endl;
 using std::vector;
 
 using vectIter = vector<int>::iterator;
-void sort(vector<int> & nuts, vector<int> & bolts)
+
+std::pair<vectIter, vectIter>
+partition(vectIter &nutsFirst, vectIter &nutsLast, vectIter &boltsFirst, vectIter &boltsLast)
 {
-    cout << nuts.size() << endl;
-
-    auto half = nuts.size() / 2;
-
-
-    auto swapIndexNuts = 0;
-    auto swapIndexBolts = 0;
-    for (auto i = 0u; i < bolts.size(); ++i)
+    auto nutsPivot = *(nutsLast - 1);
+    auto boltsPivot = *(boltsLast - 1);
+    auto swapNuts = nutsFirst;
+    auto swapBolts = boltsFirst;
+    for (auto j = nutsFirst; j < nutsLast; ++j)
     {
-        if (bolts[i] > nuts[i])
+        if (*nutsFirst < boltsPivot)
         {
-            while (nuts[swapIndexNuts] == bolts[swapIndexBolts])
-            {
-                ++swapIndexBolts;
-            }
-            std::swap(bolts[swapIndexBolts], bolts[i]);
-            ++swapIndexBolts;
+            std::swap(*swapNuts, *nutsFirst);
+            ++swapNuts;
         }
-        else if (bolts[i] < nuts[i])
+
+        if (*boltsFirst < nutsPivot)
         {
-            while (nuts[swapIndexNuts] == bolts[swapIndexBolts])
-            {
-                ++swapIndexNuts;
-            }
-            std::swap(nuts[i], nuts[swapIndexNuts]);
-            ++swapIndexNuts;
+            std::swap(*swapBolts, *boltsFirst);
+            ++swapBolts;
         }
+
+        ++nutsFirst;
+        ++boltsFirst;
+    }
+
+    std::swap(*swapNuts, *(nutsLast - 1));
+    std::swap(*swapBolts, *(boltsLast - 1));
+
+    return {swapNuts, swapBolts};
+}
+
+void sort(vectIter nutsFirst, vectIter nutsLast, vectIter boltsFirst, vectIter boltsLast)
+{
+    if (nutsFirst < nutsLast)
+    {
+       auto [pNuts, pBolts] = partition(nutsFirst, nutsLast, boltsFirst, boltsLast);
+        sort(nutsFirst, pNuts, boltsFirst, pBolts);
+        sort(pNuts, nutsLast, pBolts, boltsLast);
     }
 }
 
@@ -45,7 +56,7 @@ int main()
     std::random_device rd;
     std::mt19937 gen(rd());
 
-    auto vectorSize = 10000u;
+    auto vectorSize = 10u;
 
     vector<int> nuts(vectorSize);
     vector<int> bolts(vectorSize);
@@ -58,21 +69,32 @@ int main()
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    sort(nuts, bolts);
+    while (!nuts.empty())
+    {
+        sort(nuts.begin(), nuts.end(), bolts.begin(), bolts.end());
+        for (auto i = 0u; i < nuts.size(); ++i)
+        {
+            if (nuts[i] == bolts[i])
+            {
+                nuts.erase(nuts.begin() + i);
+                bolts.erase(bolts.begin() + i);
+            }
+        }
+    }
 
-//    while(!bolts.empty())
+//    while(!nuts.empty())
 //    {
-//        for (auto i = 0u; i < nuts.size(); ++i)
+//        for(auto i = 0u; i < nuts.size(); ++i)
 //        {
-//            cout << nuts.size() << endl;
-//            for (auto j = 0u; j < bolts.size(); ++j)
+//            if (nuts[i] == bolts[i])
 //            {
-//                if (bolts[j] == nuts[i])
-//                {
-//                    bolts.erase(bolts.begin()+j);
-//                    nuts.erase(nuts.begin()+i);
-//                }
+//                nuts.erase(nuts.begin() + i);
+//                bolts.erase(bolts.begin() + i);
 //            }
+//        }
+//        if (!nuts.empty())
+//        {
+//            std::rotate(bolts.begin(), bolts.begin() + 1, bolts.end());
 //        }
 //    }
 
